@@ -105,4 +105,6 @@ MonoBehaviour:
   Damage: 1
   AtackSpeed: 1
   AttackRange: 2
+  MoveSpeed: 3.5
+  RotationSpeed: 2
   AnimatorController: {fileID: 2111518244622979505}

@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -8,10 +7,15 @@ public class Player : MonoBehaviour
     public float Damage;
     public float AtackSpeed;
     public float AttackRange = 2;
+    public float MoveSpeed;
+    public float RotationSpeed;
 
-    private float lastAttackTime = 0;
     private bool isDead = false;
     public Animator AnimatorController;
+
+    private bool isAttacking = false;
+    private bool isSuperAttacking = false;
+    private int ClickedTotal = 0;
 
     private void Update()
     {
@@ -26,50 +30,104 @@ public class Player : MonoBehaviour
             return;
         }
 
+        float xDir = Input.GetAxis("Horizontal");
+        float zDir = Input.GetAxis("Vertical");
 
-        var enemies = SceneManager.Instance.Enemies;
-        Enemie closestEnemie = null;
+        Vector3 moveDir = new Vector3(xDir, 0.0f, zDir);
 
-        for (int i = 0; i < enemies.Count; i++)
+        transform.position += moveDir * (MoveSpeed * Time.deltaTime);
+
+        if (moveDir != Vector3.zero)
         {
-            var enemie = enemies[i];
-            if (enemie == null)
-            {
-                continue;
-            }
+            Quaternion newRotation = Quaternion.LookRotation(moveDir);
 
-            if (closestEnemie == null)
-            {
-                closestEnemie = enemie;
-                continue;
-            }
-
-            var distance = Vector3.Distance(transform.position, enemie.transform.position);
-            var closestDistance = Vector3.Distance(transform.position, closestEnemie.transform.position);
-
-            if (distance < closestDistance)
-            {
-                closestEnemie = enemie;
-            }
-
+            transform.rotation = Quaternion.Slerp(transform.rotation, newRotation, RotationSpeed * Time.deltaTime);
         }
+    }
 
-        if (closestEnemie != null)
+    public void DefaultAttack()
+    {
+        ClickedTotal++;
+        StartCoroutine(AttackCoroutine(Damage, AtackSpeed, "Attack", true));
+    }
+    public void SuperAttack()
+    {
+        isSuperAttacking = true;
+        isSuperAttacking = false;
+        StartCoroutine(AttackCoroutine(Damage * 2, 2, "DoubleAttack", false));
+    }
+
+    private IEnumerator AttackCoroutine(float Damage, float delay, string NameAnimation, bool isDefault)
+    {
+        if (isSuperAttacking || isAttacking) yield break;
+
+        isAttacking = true;
+
+        if (!isDefault)
         {
-            var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
-            if (distance <= AttackRange)
-            {
-                if (Time.time - lastAttackTime > AtackSpeed)
-                {
-                    //transform.LookAt(closestEnemie.transform);
-                    transform.transform.rotation = Quaternion.LookRotation(closestEnemie.transform.position - transform.position);
+            ClickedTotal = 1;
+            SceneManager.Instance.SuperAttackButton.interactable = false;
+        }
+        
+        while (ClickedTotal != 0)
+        {
+            var enemies = SceneManager.Instance.Enemies;
+            Enemie closestEnemie = null;
+            Debug.Log(NameAnimation);
 
-                    lastAttackTime = Time.time;
-                    closestEnemie.Hp -= Damage;
-                    AnimatorController.SetTrigger("Attack");
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                var enemie = enemies[i];
+                if (enemie == null)
+                {
+                    continue;
+                }
+
+                if (closestEnemie == null)
+                {
+                    closestEnemie = enemie;
+                    continue;
+                }
+
+                var distance = Vector3.Distance(transform.position, enemie.transform.position);
+                var closestDistance = Vector3.Distance(transform.position, closestEnemie.transform.position);
+
+                if (distance < closestDistance)
+                {
+                    closestEnemie = enemie;
                 }
             }
+
+            if (closestEnemie != null)
+            {
+                var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
+                if (distance <= AttackRange)
+                {
+                    transform.rotation = Quaternion.LookRotation(closestEnemie.transform.position - transform.position);
+
+                    closestEnemie.Hp -= Damage;
+                }
+            }
+            AnimatorController.SetTrigger(NameAnimation);
+
+            if (!isDefault)
+            {
+                ClickedTotal = 0;
+
+            } else
+            {
+                ClickedTotal--;
+            }
+
+            yield return new WaitForSeconds(delay);
+
+            if (!isDefault)
+            {
+                SceneManager.Instance.SuperAttackButton.interactable = true;
+            }
+
         }
+        isAttacking = false;
     }
 
     private void Die()

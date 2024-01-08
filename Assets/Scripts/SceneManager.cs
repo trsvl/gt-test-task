@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class SceneManager : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class SceneManager : MonoBehaviour
     public List<Enemie> Enemies;
     public GameObject Lose;
     public GameObject Win;
+    public Button SuperAttackButton;
 
     private int currWave = 0;
     [SerializeField] private LevelConfig Config;
@@ -66,6 +68,14 @@ public class SceneManager : MonoBehaviour
     {
         UnityEngine.SceneManagement.SceneManager.LoadScene(0);
     }
-    
+    public void DefaultAttack()
+    {
+        Player.DefaultAttack();
+    }
+    public void SuperAttack()
+    {
+        Player.SuperAttack();
+    }
+
 
 }

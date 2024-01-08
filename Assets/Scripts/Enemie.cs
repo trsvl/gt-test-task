@@ -56,7 +56,6 @@ public class Enemie : MonoBehaviour
             Agent.SetDestination(SceneManager.Instance.Player.transform.position);
         }
         AnimatorController.SetFloat("Speed", Agent.speed); 
-        Debug.Log(Agent.speed);
 
     }
 
@@ -66,6 +65,7 @@ public class Enemie : MonoBehaviour
     {
         SceneManager.Instance.RemoveEnemie(this);
         isDead = true;
+        SceneManager.Instance.Player.Hp += 2;
         AnimatorController.SetTrigger("Die");
     }
 
