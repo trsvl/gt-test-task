@@ -12,6 +12,8 @@ public class SceneManager : MonoBehaviour
     public List<Enemie> Enemies;
     public GameObject Lose;
     public GameObject Win;
+    public GameObject WaveObj;
+    public Button AttackButton;
     public Button SuperAttackButton;
 
     private int currWave = 0;
@@ -25,6 +27,12 @@ public class SceneManager : MonoBehaviour
     private void Start()
     {
         SpawnWave();
+        UpdateWaveText();
+    }
+
+    private void UpdateWaveText()
+    {
+        WaveObj.GetComponent<Text>().text = $"Wave {currWave}/{Config.Waves.Length}";
     }
 
     public void AddEnemie(Enemie enemie)
@@ -35,7 +43,12 @@ public class SceneManager : MonoBehaviour
     public void RemoveEnemie(Enemie enemie)
     {
         Enemies.Remove(enemie);
-        if(Enemies.Count == 0)
+        if (enemie is BigEnemie bigEnemie)
+        {
+            bigEnemie.SpawnSmallEnemies();
+            return;
+        }
+        if (Enemies.Count == 0)
         {
             SpawnWave();
         }
@@ -44,6 +57,8 @@ public class SceneManager : MonoBehaviour
     public void GameOver()
     {
         Lose.SetActive(true);
+        AttackButton.interactable = false;
+        SuperAttackButton.interactable = false;
     }
 
     private void SpawnWave()
@@ -51,6 +66,7 @@ public class SceneManager : MonoBehaviour
         if (currWave >= Config.Waves.Length)
         {
             Win.SetActive(true);
+            SuperAttackButton.interactable = false;
             return;
         }
 
@@ -61,21 +77,21 @@ public class SceneManager : MonoBehaviour
             Instantiate(character, pos, Quaternion.identity);
         }
         currWave++;
-
+        UpdateWaveText();
     }
 
     public void Reset()
     {
         UnityEngine.SceneManagement.SceneManager.LoadScene(0);
     }
+
     public void DefaultAttack()
     {
         Player.DefaultAttack();
     }
+
     public void SuperAttack()
     {
         Player.SuperAttack();
     }
-
-
 }

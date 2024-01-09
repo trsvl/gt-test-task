@@ -10,19 +10,16 @@ public class Enemie : MonoBehaviour
     public float AtackSpeed;
     public float AttackRange = 2;
 
-
     public Animator AnimatorController;
     public NavMeshAgent Agent;
 
     private float lastAttackTime = 0;
     private bool isDead = false;
 
-
     private void Start()
     {
         SceneManager.Instance.AddEnemie(this);
         Agent.SetDestination(SceneManager.Instance.Player.transform.position);
-
     }
 
     private void Update()
@@ -56,17 +53,13 @@ public class Enemie : MonoBehaviour
             Agent.SetDestination(SceneManager.Instance.Player.transform.position);
         }
         AnimatorController.SetFloat("Speed", Agent.speed); 
-
     }
-
-
 
     private void Die()
     {
         SceneManager.Instance.RemoveEnemie(this);
         isDead = true;
-        SceneManager.Instance.Player.Hp += 2;
+        SceneManager.Instance.Player.Hp += 2; //Heal Player
         AnimatorController.SetTrigger("Die");
     }
-
 }

@@ -9,13 +9,16 @@ public class Player : MonoBehaviour
     public float AttackRange = 2;
     public float MoveSpeed;
     public float RotationSpeed;
+    public float SuperAttackCoolDown;
 
     private bool isDead = false;
     public Animator AnimatorController;
 
     private bool isAttacking = false;
     private bool isSuperAttacking = false;
+    private bool isDisableButton = false;
     private int ClickedTotal = 0;
+    private float timer = 0;
 
     private void Update()
     {
@@ -43,37 +46,85 @@ public class Player : MonoBehaviour
 
             transform.rotation = Quaternion.Slerp(transform.rotation, newRotation, RotationSpeed * Time.deltaTime);
         }
+
+        if (isDisableButton)
+        {
+            timer += Time.deltaTime;
+
+            if (timer >= SuperAttackCoolDown)
+            {
+                timer = 0;
+                isDisableButton = false;
+            }
+        }
+
+        var enemies = SceneManager.Instance.Enemies;
+        Enemie closestEnemie = null;
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            var enemie = enemies[i];
+            if (enemie == null)
+            {
+                continue;
+            }
+
+            if (closestEnemie == null)
+            {
+                closestEnemie = enemie;
+                continue;
+            }
+
+            var distance = Vector3.Distance(transform.position, enemie.transform.position);
+            var closestDistance = Vector3.Distance(transform.position, closestEnemie.transform.position);
+
+            if (distance < closestDistance)
+            {
+                closestEnemie = enemie;
+            }
+        }
+
+        if (closestEnemie != null)
+        {
+            var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
+            if ((distance <= AttackRange) && !isDisableButton)
+            {
+                SceneManager.Instance.SuperAttackButton.interactable = true;
+            }
+            else
+            {
+                SceneManager.Instance.SuperAttackButton.interactable = false;
+            }
+        }
     }
 
     public void DefaultAttack()
     {
-        ClickedTotal++;
-        StartCoroutine(AttackCoroutine(Damage, AtackSpeed, "Attack", true));
+        if (!isSuperAttacking)
+        {
+            ClickedTotal++;
+            StartCoroutine(AttackCoroutine(Damage, AtackSpeed, "Attack", true));
+        }
     }
     public void SuperAttack()
     {
+        ClickedTotal = 1;
+        isAttacking = false;
         isSuperAttacking = true;
-        isSuperAttacking = false;
-        StartCoroutine(AttackCoroutine(Damage * 2, 2, "DoubleAttack", false));
+        isDisableButton = true;
+        StartCoroutine(AttackCoroutine(Damage * 2, AtackSpeed, "DoubleAttack", false));
     }
 
     private IEnumerator AttackCoroutine(float Damage, float delay, string NameAnimation, bool isDefault)
     {
-        if (isSuperAttacking || isAttacking) yield break;
+        if (isAttacking) yield break;
 
         isAttacking = true;
 
-        if (!isDefault)
-        {
-            ClickedTotal = 1;
-            SceneManager.Instance.SuperAttackButton.interactable = false;
-        }
-        
-        while (ClickedTotal != 0)
+        while (ClickedTotal > 0)
         {
             var enemies = SceneManager.Instance.Enemies;
             Enemie closestEnemie = null;
-            Debug.Log(NameAnimation);
 
             for (int i = 0; i < enemies.Count; i++)
             {
@@ -113,19 +164,17 @@ public class Player : MonoBehaviour
             if (!isDefault)
             {
                 ClickedTotal = 0;
-
-            } else
+            }
+            else
             {
                 ClickedTotal--;
             }
 
             yield return new WaitForSeconds(delay);
-
-            if (!isDefault)
-            {
-                SceneManager.Instance.SuperAttackButton.interactable = true;
-            }
-
+        }
+        if (!isDefault)
+        {
+            isSuperAttacking = false;
         }
         isAttacking = false;
     }
@@ -137,6 +186,4 @@ public class Player : MonoBehaviour
 
         SceneManager.Instance.GameOver();
     }
-
-
 }
